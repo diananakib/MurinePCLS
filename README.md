@@ -4,5 +4,4 @@ Analysis to construct the snRNA-seq map of murine precision cut liver slices tre
 
 # Notes
 
-The scripts were run in order
-The raw data is publically available on GEO
+The scripts were run in order. The raw data is publically available on GEO.
