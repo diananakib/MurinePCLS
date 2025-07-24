@@ -1,0 +1,42 @@
+# pseudotime_slingshot_analysis.R
+# Pseudotime inference using Slingshot (Street et al. 2018, BMC Genomics) and gene association testing
+
+library(Seurat)
+library(SingleCellExperiment)
+library(slingshot)
+library(tradeSeq)
+library(ggplot2)
+library(dplyr)
+
+# Convert object to SingleCellExperiment 
+sce <- as.SingleCellExperiment(seurat)
+
+# Run Slingshot
+reducedDim(sce, "UMAP") <- seurat@reductions$umap@cell.embeddings
+sce <- slingshot(sce, clusterLabels = sce$genlab_pub, reducedDim = "UMAP")
+# Plotting trajectories overlayed
+plot(reducedDim(sce, "UMAP"), col = rainbow(length(unique(sce$genlab_pub)))[sce$genlab_pub],
+     pch = 16, cex = 0.5)
+lines(SlingshotDataSet(sce), lwd = 2, col = 'black')
+# Select highly variable genes or top expressed genes
+top_genes <- rownames(seurat)[1:1000]  # or use FindVariableFeatures()
+# Fitting GAM models
+sce_subset <- sce[top_genes, ]
+gam_models <- fitGAM(sce_subset, nknots = 6)
+assoc_test <- associationTest(gam_models)
+assoc_test$fdr <- p.adjust(assoc_test$pvalue, method = "fdr")
+
+# Get top genes of interest indicative of trajectory point
+top_assoc_genes <- assoc_test %>%
+  as.data.frame() %>%
+  arrange(fdr) %>%
+  filter(fdr < 0.05) %>%
+  head(20)
+
+# Plot smoothed expression for a top gene 
+feature_id <- rownames(top_assoc_genes)[1]
+plotSmoothers(gam_models, counts = assays(sce_subset)$counts, gene = feature_id)
+ggsave("plots/pseudotime_top_gene_smoother.png", width = 6, height = 4)
+
+# Optional: Save results
+write.csv(top_assoc_genes, "results/pseudotime_top_genes.csv", row.names = TRUE)
