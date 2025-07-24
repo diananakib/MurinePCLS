@@ -26,7 +26,7 @@ myeloid <- AddModuleScore(
 # Scores will be saved as  MARCO1 and ARG11
 
 # Violin plots by annotated sample label
-VlnPlot(myeloid, features = c("MARCO1", "ARG1"), group.by = "Manualanno_Sample", pt.size = 0.1) +
+VlnPlot(myeloid, features = c("MARCO1", "ARG1"), group.by = "genlab_pub", pt.size = 0.1) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggsave("plots/myeloid_TAM_scores_by_population.png", width = 8, height = 5)
 
