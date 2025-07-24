@@ -125,7 +125,7 @@ celltype_plots <- lapply(cell_types, function(ct) {
 plot_grid(plotlist = celltype_plots, ncol = 3)
 ggsave("plots/cell_counts_individual_grid.png", width = 12, height = 10)
 
-# Final version: custom color palette and polished layout
+# Final version of colors
 custom_colors <- c("#225ea8", "#8aa3e7", "#fcab1d", "#f2d17f", "#4a4840", "#b8aaa1")
 
 final_plot <- ggplot(cell_counts, aes(x = ID, y = CellCount, fill = ID)) +
