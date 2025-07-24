@@ -1,4 +1,4 @@
-# IL-4-mediates Pro-Regenerative Cellular Reprogramming in 3D Liver Culture
+# IL-4-Mediated Pro-Regenerative Cellular Reprogramming in 3D Liver Culture
 
 Analysis to develop the snRNA-seq map of murine precision cut liver slices (PCLS) treated with exogenous IL-4.
 
