@@ -1,5 +1,5 @@
 # tricycle_cellcycle_analysis.R
-# Run cell cycle analysis using Tricycle on a Seurat object
+# Run cell cycle analysis using Tricycle (Zheng et al. 2022, https://doi.org/10.1186/s13059-021-02581-y) on a Seurat object
 
 library(Seurat)
 library(tricycle)
