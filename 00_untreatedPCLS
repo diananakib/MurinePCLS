@@ -1,1 +1,83 @@
+# Summary and visualization for untreated PCLS map with cell type proportions and UMAPs
+
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+# Output directory
+if (!dir.exists("plots")) dir.create("plots")
+
+# whole map key genes
+key.genes <- c("Alb", "Hamp",  "Pck1", "Sult2a2", "Orm2", "Gsta1", "Epcam", "Krt7", "Krt19", "Hgf", "Col1a1", "Col3a1", "Col1a2", "Acta2", "Calcrl", "Stab2", "Eng", "Sox18", "Pecam1", "Cd68", "Cd5l", "Ms4a1", "Cd19", "Cd3e", "Cd247", "Il7r", "Nampt", "Runx2","Mki67", "Top2a")
+
+gene.dotplot <- DotPlot(seurat, features = key.genes, group.by = "genlab_pub", split.by = "Day", cols = c( "#4a4840","#225ea8", "#fcab1d"), dot.scale = 8, scale.by = "size") + theme(axis.text.x = element_text(size = 15)) + theme(axis.text.y = element_text(size = 15)) + RotatedAxis()
+
+ggsave("plots/wholemap_keygenes.png", gene.dotplot, width = 8, height = 8)
+
+# === Hepatocyte/Cholangiocyte Cell Proportions by Treatment ===
+hep_meta <- hepatocyte_chol@meta.data
+hep_df <- hep_meta %>%
+  count(Treatment, genlab_pub) %>%
+  group_by(Treatment) %>%
+  mutate(Percent = n / sum(n) * 100)
+
+# Absolute counts barplot
+p1 <- ggplot(hep_df, aes(x = genlab_pub, y = n, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Hep/Chol Cell Counts", x = "Cell Type", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Percent barplot
+p2 <- ggplot(hep_df, aes(x = genlab_pub, y = Percent, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Hep/Chol Cell Proportions", x = "Cell Type", y = "Percent") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("plots/hep_chol_counts_and_proportions.png", p1 / p2, width = 8, height = 8)
+
+# === Mesenchymal Cell Proportions by Treatment ===
+mes_meta <- mesenchyme@meta.data
+mes_df <- mes_meta %>%
+  count(Treatment, Manualanno_Sample) %>%
+  group_by(Treatment) %>%
+  mutate(Percent = n / sum(n) * 100)
+
+p3 <- ggplot(mes_df, aes(x = Manualanno_Sample, y = n, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Mesenchymal Cell Counts", x = "Cell Type", y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p4 <- ggplot(mes_df, aes(x = Manualanno_Sample, y = Percent, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Mesenchymal Cell Proportions", x = "Cell Type", y = "Percent") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("plots/mesenchyme_counts_and_proportions.png", p3 / p4, width = 8, height = 8)
+
+# === UMAP Plots ===
+seurat$Day <- factor(seurat$Day, levels = c("One", "Three", "Five"))
+seurat$genlab_pub <- factor(seurat$genlab_pub, levels = c(
+  "Hepatocyte1", "Hepatocyte2", "HepatoCholangiocyte", "Cholangiocyte",
+  "ProlifCholangiocyte", "Mesenchyme", "LSEC/LEC", "Myeloid", "Tcell", "Bcell"))
+
+# UMAP split by Day
+DimPlot(seurat, group.by = "genlab_pub", split.by = "Day", ncol = 3) +
+  ggtitle("Cell Type UMAP Split by Day")
+ggsave("plots/umap_by_celltype_split_by_day.png", width = 12, height = 4)
+
+# UMAP by cell type (all days)
+DimPlot(seurat, group.by = "genlab_pub") +
+  ggtitle("Cell Type UMAP - All Days")
+ggsave("plots/umap_by_celltype_all_days.png", width = 7, height = 5)
+
+# UMAP by treatment
+DimPlot(seurat, group.by = "Treatment") +
+  ggtitle("UMAP Colored by Treatment")
+ggsave("plots/umap_by_treatment.png", width = 7, height = 5)
+
 
