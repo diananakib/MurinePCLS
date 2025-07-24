@@ -1,0 +1,148 @@
+# cellcounts.R
+# Cell counts per treatment group (IL-4 untreated)
+cell_count_by_treatment <- as.data.frame(table(treated@meta.data$Treatment))
+print(cell_count_by_treatment)
+
+# Contingency tables and proportions 
+cat("Cell types per sample:\n")
+print(table(treated@meta.data$genlab_pub, treated@meta.data$orig.ident))
+
+cat("\nProportion of each cell type per sample:\n")
+print(round(prop.table(table(treated@meta.data$genlab_pub, treated@meta.data$orig.ident), margin = 2), 2))
+
+# Basic sample composition summaries
+cat("\nTotal cells per annotated population:\n")
+print(table(seurat@meta.data$genlab_pub))
+
+cat("\nTotal cells per sample ID:\n")
+print(table(seurat@meta.data$orig.ident))
+
+#  Full proportional tables and absolute tables
+celltype_by_sample <- table(seurat@meta.data$genlab_pub, seurat@meta.data$orig.ident)
+print(celltype_by_sample)
+
+prop_celltype_by_sample <- prop.table(celltype_by_sample, margin = 2)
+print(round(prop_celltype_by_sample, 2))
+
+# Cell type proportions per sample (normalized stacked bar)
+
+# Ensure consistent order of cell types
+celltype_levels <- c("Hepatocyte2", "Hepatocyte1", "Cholangiocyte", 
+                     "LSEC/LEC", "Mesenchyme", "Myeloid", "Tcell", "Bcell")
+seurat$genlab_pub <- factor(seurat$genlab_pub, levels = celltype_levels)
+
+ggplot(seurat@meta.data, aes(x = genlab_pub, fill = orig.ident)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer(palette = "Set3") +
+  labs(x = "Cell Type", y = "Proportion", fill = "Sample") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 13, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 10),
+    legend.text = element_text(size = 13),
+    legend.title = element_text(size = 14)
+  )
+ggsave("plots/composition_by_celltype.png", width = 10, height = 6)
+
+# Barplot of sample composition by cell type (normalized stacked bar)
+
+# Ensure consistent sample order
+sample_levels <- c("M029_ctrl_d1", "M029_IL4_d1", "M029_ctrl_d3", "M029_IL4_d3")
+seurat$orig.ident <- factor(seurat$orig.ident, levels = sample_levels)
+
+ggplot(seurat@meta.data, aes(x = orig.ident, fill = genlab_pub)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "Sample", y = "Proportion", fill = "Cell Type") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 20),
+    axis.text.y = element_text(size = 10),
+    legend.text = element_text(size = 15),
+    legend.title = element_text(size = 16)
+  )
+ggsave("plots/composition_by_sample.png", width = 10, height = 6)
+
+## Cell counts per day
+Barplots of cell counts per cell type across timepoints
+
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+library(cowplot)
+
+# Load object (adjust if different)
+seurat <- PCLSIL4Day0to5_clean
+
+# Define cell types of interest
+cell_types <- c(
+  "Hepatocyte1", "Hepatocyte2", "HepatoCholangiocyte", "Cholangiocyte", 
+  "ProlifCholangiocyte", "Mesenchyme", "LSEC/LEC", "Myeloid", "Tcell", "Bcell"
+)
+
+# Extract and filter metadata
+meta_data <- seurat@meta.data
+cell_counts <- meta_data %>%
+  filter(genlab_pub %in% cell_types) %>%       # Only keep relevant cell types
+  group_by(genlab_pub, ID) %>%                 # Group by cell type and Day
+  summarise(CellCount = n(), .groups = "drop") # Count cells
+
+# Ensure proper factor levels for consistent plotting
+cell_counts$genlab_pub <- factor(cell_counts$genlab_pub, levels = cell_types)
+cell_counts$ID <- factor(cell_counts$ID, levels = sort(unique(cell_counts$ID)))
+
+#Combined faceted barplot with default colors
+ggplot(cell_counts, aes(x = ID, y = CellCount, fill = ID)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ genlab_pub, scales = "free_y") +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  labs(
+    title = "Cell Counts by Day and Cell Type",
+    x = "Day of Culture",
+    y = "Cell Count"
+  ) +
+  theme(
+    strip.text = element_text(size = 10, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+ggsave("plots/cell_counts_by_day_facet.png", width = 12, height = 7)
+
+#  Individual cell type plots
+celltype_plots <- lapply(cell_types, function(ct) {
+  ggplot(cell_counts %>% filter(genlab_pub == ct), aes(x = ID, y = CellCount, fill = ID)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    scale_fill_brewer(palette = "Set2") +
+    theme_minimal() +
+    labs(title = ct, x = "Day of Culture", y = "Cell Count") +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "none"
+    )
+})
+
+# Combine all plots in a grid (adjust ncol as needed)
+plot_grid(plotlist = celltype_plots, ncol = 3)
+ggsave("plots/cell_counts_individual_grid.png", width = 12, height = 10)
+
+# Final version: custom color palette and polished layout
+custom_colors <- c("#225ea8", "#8aa3e7", "#fcab1d", "#f2d17f", "#4a4840", "#b8aaa1")
+
+final_plot <- ggplot(cell_counts, aes(x = ID, y = CellCount, fill = ID)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ genlab_pub, scales = "free_y", ncol = 5) +
+  scale_fill_manual(values = custom_colors) +
+  theme_minimal() +
+  labs(
+    title = "Cell Counts by Day and Cell Type",
+    x = "Day of Culture",
+    y = "Cell Count"
+  ) +
+  theme(
+    strip.text = element_text(size = 8, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, colour = "black"),
+    panel.grid = element_line(color = "grey90")
+  )
+
+print(final_plot)
+ggsave("plots/cell_counts_final_customcolors.png", plot = final_plot, width = 14, height = 6)
