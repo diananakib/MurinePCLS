@@ -23,15 +23,15 @@ myeloid <- AddModuleScore(
   name = c("MARCO", "ARG1")
 )
 
-# Scores will be saved as  MARCO1 and ARG11
+# Scores will be saved as  MARCO1 and ARG1
 
 # Violin plots by annotated sample label
 VlnPlot(myeloid, features = c("MARCO1", "ARG1"), group.by = "genlab_pub", pt.size = 0.1) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggsave("plots/myeloid_TAM_scores_by_population.png", width = 8, height = 5)
+ggsave("plots/myeloid_scores_by_population.png", width = 8, height = 5)
 
 # FeaturePlot for spatial (if integrated or mapped)
-FeaturePlot(myeloid, features = c("MARCO1", "ARG11"), cols = c("lightgrey", "darkred"))
+FeaturePlot(myeloid, features = c("MARCO1", "ARG1"), cols = c("lightgrey", "darkred"))
 
 # Optionally save metadata scores
-write.csv(myeloid@meta.data[, c("MARCO1", "ARG11")], "results/myeloid_TAM_scores.csv", row.names = TRUE)
+write.csv(myeloid@meta.data[, c("MARCO1", "ARG1")], "results/myeloid_scores.csv", row.names = TRUE)
