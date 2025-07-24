@@ -1,0 +1,37 @@
+# myeloid_ARG1_MARCO_scores.R
+# Score MARCO-high and TAM3 ARG1-high macrophage gene signatures
+
+library(Seurat)
+library(ggplot2)
+library(dplyr)
+
+# Define gene sets
+marco_high <- c(
+  "Slc40a1", "Fth1", "Tnf", "Slc11a1", "Dhrs3", "Stat1", "Tnfrsf1b", "Vcam1", "Icam1",
+  "Slc4a7", "Aif1", "Adrb2", "Psen2", "Marco", "Irf7", "Ifnar2", "Ifit2", "Cd86", "Cd38"
+)
+
+arg1_high <- c(
+  "Arg1", "Retnla", "Cd36", "Mrc1", "Pdcd1lg2", "Cd163", "Vegfa", "Ido2", "Hif1a", "Slc2a1",
+  "Ppara", "Pparg", "Ppargc1b", "Stat6", "Slc7a2", "Bcl2"
+)
+
+# Run AddModuleScore
+myeloid <- AddModuleScore(
+  object = myeloid,
+  features = list(marco_high, arg1_high),
+  name = c("MARCO", "ARG1")
+)
+
+# Scores will be saved as  MARCO1 and ARG11
+
+# Violin plots by annotated sample label
+VlnPlot(myeloid, features = c("MARCO1", "ARG1"), group.by = "Manualanno_Sample", pt.size = 0.1) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave("plots/myeloid_TAM_scores_by_population.png", width = 8, height = 5)
+
+# FeaturePlot for spatial (if integrated or mapped)
+FeaturePlot(myeloid, features = c("MARCO1", "ARG11"), cols = c("lightgrey", "darkred"))
+
+# Optionally save metadata scores
+write.csv(myeloid@meta.data[, c("MARCO1", "ARG11")], "results/myeloid_TAM_scores.csv", row.names = TRUE)
