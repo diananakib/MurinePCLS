@@ -1,0 +1,111 @@
+### 01_load_libraries.R
+# Install and load required packages
+
+required_packages <- c("Seurat", "fgsea", "org.Mm.eg.db", "msigdbr", "dplyr", "ggplot2")
+
+# Install any missing packages
+installed <- required_packages %in% rownames(installed.packages())
+if (any(!installed)) {
+  install.packages(required_packages[!installed])
+}
+
+# Load the libraries
+invisible(lapply(required_packages, library, character.only = TRUE))
+
+### 02_prepare_data.R
+# Load Seurat object and prepare KEGG gene sets - hepatocyte_chol is subsetted hepatocyte and cholangiocyte populations
+
+seurat_object <- hepatocyte_chol
+
+# Retrieve KEGG gene sets from msigdbr (for Mus musculus)
+pathways <- msigdbr(species = "Mus musculus", category = "C2", subcategory = "KEGG")
+
+# Create a named list of gene sets for fgsea
+pathway_list <- split(pathways$gene_symbol, pathways$gs_name)
+
+### 03_run_gsea_day1.R
+# Subset, perform differential expression, and run GSEA for Day 1 (IL4 vs Ctrl)
+
+# Subset Seurat object for Day 1 samples
+day1_subset <- subset(seurat_object, subset = ID %in% c("D1_IL4", "D1_Ctrl"))
+day1_subset <- SetIdent(day1_subset, value = "ID")
+
+# Perform differential gene expression analysis
+deg_day1 <- FindMarkers(
+  object = day1_subset,
+  ident.1 = "D1_IL4",
+  ident.2 = "D1_Ctrl",
+  logfc.threshold = 2,
+  min.pct = 0.1,
+  test.use = "wilcox"
+)
+
+# Create ranked gene list for fgsea
+ranked_genes_day1 <- deg_day1$avg_log2FC
+names(ranked_genes_day1) <- rownames(deg_day1)
+ranked_genes_day1 <- sort(ranked_genes_day1, decreasing = TRUE)
+
+# Run fgsea
+gsea_day1 <- fgsea(
+  pathways = pathway_list,
+  stats = ranked_genes_day1,
+  minSize = 15,
+  maxSize = 500,
+  nperm = 1000
+)
+
+# Output top results to console
+print(head(gsea_day1, 10))
+
+# Optionally: write results to file
+write.table(
+  gsea_day1,
+  file = "gsea_day1_results.tsv",
+  sep = "\t",
+  quote = FALSE,
+  row.names = FALSE
+)
+
+# For plotting
+top_n <- 10
+top_nes <- gsea_day1 %>%
+  arrange(desc(NES)) %>%
+  head(top_n) %>%
+  mutate(pathway = gsub("KEGG_", "", pathway),
+         pathway = gsub("_", " ", pathway),
+         pathway = factor(pathway, levels = rev(pathway)))
+
+# NES barplot
+ggplot(top_nes, aes(x = pathway, y = NES)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Top Enriched Pathways by NES - Day 1 IL4 vs Ctrl",
+       x = "Pathway", y = "Normalized Enrichment Score") +
+  theme(axis.text = element_text(size = 10))
+ggsave("top_NES_pathways_day1.png", width = 8, height = 6)
+
+# Filter top -log10(pval) pathways
+gsea_day1$log_pval <- -log10(gsea_day1$pval)
+top_pval <- gsea_day1 %>%
+  arrange(desc(log_pval)) %>%
+  head(top_n) %>%
+  mutate(pathway = gsub("KEGG_", "", pathway),
+         pathway = gsub("_", " ", pathway),
+         pathway = factor(pathway, levels = rev(pathway)))
+
+# p-value barplot
+ggplot(top_pval, aes(x = pathway, y = log_pval)) +
+  geom_bar(stat = "identity", fill = "tomato") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Top Pathways by -log10(p-value) - Day 1 IL4 vs Ctrl",
+       x = "Pathway", y = "-log10(p-value)") +
+  theme(axis.text = element_text(size = 10))
+ggsave("top_logpval_pathways_day1.png", width = 8, height = 6)
+
+# Enrichment plot (example for most enriched pathway)
+top_pathway <- gsea_day1$pathway[which.max(gsea_day1$NES)]
+plotEnrichment(pathway_list[[top_pathway]], ranked_genes_day1) +
+  labs(title = paste("Enrichment:", gsub("KEGG_", "", top_pathway)))
+ggsave("enrichment_example_day1.png", width = 8, height = 5)
