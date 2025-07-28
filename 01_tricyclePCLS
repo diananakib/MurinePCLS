@@ -5,19 +5,18 @@ library(Seurat)
 library(tricycle)
 library(ggplot2)
 
-# Optional: subsetted to specific cell types (e.g., myeloid) as well as full map
 # seurat <- subset(seurat, subset = genlab_pub == "Myeloid")
 
-# Convert to SingleCellExperiment
+# Convert to SingleCellExperiment object
 sce <- as.SingleCellExperiment(seurat)
 
 # Map to cell cycle space
 sce <- project_cycle_space(sce, g = "mouse")  # or "human" for human genes
 
-# Extract Tricycle position (angle on cell cycle)
+# Extract Tricycle position (angle on cell cycle/ since curve)
 seurat$tricyclePosition <- sce$tricyclePosition
 
-# Optional: Add Seurat PCA for dimensionality
+# Seurat PCA for dimensionality
 seurat <- RunPCA(seurat)
 
 # UMAP colored by Tricycle position
@@ -25,12 +24,10 @@ p <- DimPlot(seurat, reduction = "umap", group.by = "tricyclePosition", pt.size 
   labs(title = "Cell Cycle Position (Tricycle)") +
   theme_minimal()
 
-# Or use continuous coloring
+# Continuous color scheme
 FeaturePlot(seurat, features = "tricyclePosition", cols = c("lightgrey", "darkred"))
-
-# Save output
 ggsave("plots/tricycle_umap.png", plot = p, width = 7, height = 5)
 
-# Optional: circular plot
+# circular plot
 plot_cyclic_score(sce, color_by = "tricyclePosition")
 ggsave("plots/tricycle_circular.png", width = 5, height = 5)
