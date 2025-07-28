@@ -7,9 +7,9 @@ library(patchwork)
 library(ggplot2)
 library(Seurat)
 
-# Setup ----
+# Setup
 # Load your Seurat object
-group.by <- "genlab_pub"  
+group.by <- "genlab_pub"  #cell type annotations
 data.input <- GetAssayData(seurat, slot = "data")  # normalized data
 meta <- seurat@meta.data
 
@@ -51,11 +51,6 @@ dev.off()
 # Bubble plot: top pathways to visiualize
 pdf("plots/cellchat_bubble_top_pathways.pdf", width = 8, height = 6)
 netVisual_bubble(cellchat, remove.isolate = TRUE)
-dev.off()
-
-# Pathway-specific network to visualize
-pdf("plots/cellchat_pathway_MIF.pdf", width = 7, height = 6)
-netVisual_aggregate(cellchat, signaling = "MIF", layout = "circle")
 dev.off()
 
 # Save CellChat object
