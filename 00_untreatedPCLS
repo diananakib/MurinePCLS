@@ -59,7 +59,7 @@ p4 <- ggplot(mes_df, aes(x = Manualanno_Sample, y = Percent, fill = Treatment)) 
 
 ggsave("plots/mesenchyme_counts_and_proportions.png", p3 / p4, width = 8, height = 8)
 
-# === UMAP Plots ===
+#  UMAP Plots in Figures 2-3
 seurat$Day <- factor(seurat$Day, levels = c("One", "Three", "Five"))
 seurat$genlab_pub <- factor(seurat$genlab_pub, levels = c(
   "Hepatocyte1", "Hepatocyte2", "HepatoCholangiocyte", "Cholangiocyte",
