@@ -8,14 +8,12 @@ library(patchwork)
 # Output directory
 if (!dir.exists("plots")) dir.create("plots")
 
-# whole map key genes
+# Whole map key genes
 key.genes <- c("Alb", "Hamp",  "Pck1", "Sult2a2", "Orm2", "Gsta1", "Epcam", "Krt7", "Krt19", "Hgf", "Col1a1", "Col3a1", "Col1a2", "Acta2", "Calcrl", "Stab2", "Eng", "Sox18", "Pecam1", "Cd68", "Cd5l", "Ms4a1", "Cd19", "Cd3e", "Cd247", "Il7r", "Nampt", "Runx2","Mki67", "Top2a")
-
 gene.dotplot <- DotPlot(seurat, features = key.genes, group.by = "genlab_pub", split.by = "Day", cols = c( "#4a4840","#225ea8", "#fcab1d"), dot.scale = 8, scale.by = "size") + theme(axis.text.x = element_text(size = 15)) + theme(axis.text.y = element_text(size = 15)) + RotatedAxis()
-
 ggsave("plots/wholemap_keygenes.png", gene.dotplot, width = 8, height = 8)
 
-# === Hepatocyte/Cholangiocyte Cell Proportions by Treatment ===
+# Hepatocyte/Cholangiocyte Cell Proportions by Treatment
 hep_meta <- hepatocyte_chol@meta.data
 hep_df <- hep_meta %>%
   count(Treatment, genlab_pub) %>%
